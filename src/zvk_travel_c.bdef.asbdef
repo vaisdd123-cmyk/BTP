@@ -1,0 +1,40 @@
+projection;
+strict ( 2 );
+
+use draft;
+
+define behavior for ZVK_TRAVEL_C alias Travel
+use etag
+{
+  use create;
+  use update;
+  use delete;
+
+  use action Edit;
+  use action Discard;
+  use action Activate;
+  use action Resume;
+  use action Prepare;
+
+
+  use association _Booking { create; with draft; }
+}
+
+define behavior for ZVK_BOOKING_C alias Booking
+{
+  use update;
+  use delete;
+
+  use association _Travel {with draft; }
+  use association _BookingSupplement { create; with draft; }
+}
+
+define behavior for ZVK_BOOKINGSUP_C alias BookingSupplement
+{
+  use update;
+  use delete;
+
+  use association _Travel{with draft;}
+  use association _Booking{with draft;}
+
+}

@@ -1,0 +1,67 @@
+@Metadata.layer: #CORE
+annotate entity ZVK_BOOKING_C
+    with 
+{   
+    @UI.facet: [{ id : 'Booking',
+                  purpose : #STANDARD ,
+                  type : #IDENTIFICATION_REFERENCE ,
+                  label : 'Booking',
+                  position : 10 } ,
+                  
+                  { id : 'BookingSupplement' ,
+                    purpose : #STANDARD ,
+                    type : #LINEITEM_REFERENCE ,
+                    label : 'BookingSupplement' ,
+                    targetElement: '_BookingSupplement',
+                    position : 15}]
+                  
+    @UI.hidden: true
+    BookingUuid;
+    
+    @UI.hidden: true
+    TravelUuid;
+    
+    @UI.lineItem: [{ position : 15 , importance: #HIGH }]
+    @UI.identification: [{ position: 15 , importance: #HIGH }]
+    BookingId;
+    
+    @UI.lineItem: [{ position : 25 , importance: #HIGH }]
+    @UI.identification: [{ position: 25 , importance: #HIGH }]
+    BookingDate;
+    
+    @UI.lineItem: [{ position : 35 , importance: #HIGH }]
+    @UI.identification: [{ position: 35 , importance: #HIGH }]
+    CustomerId;
+    
+    @UI.lineItem: [{ position : 45 , importance: #HIGH }]
+    @UI.identification: [{ position: 45 , importance: #HIGH }]
+    CarrierId;
+    
+    @UI.lineItem: [{ position : 55 , importance: #HIGH }]
+    @UI.identification: [{ position: 55 , importance: #HIGH }]
+    ConnectionId;
+    
+    @UI.lineItem: [{ position : 65 , importance: #HIGH }]
+    @UI.identification: [{ position: 65 , importance: #HIGH }]
+    FlightDate;
+    
+    @UI.lineItem: [{ position : 75 , importance: #HIGH }]
+    @UI.identification: [{ position: 75 , importance: #HIGH }]
+    FlightPrice;
+    
+    @UI.lineItem: [{ position : 85 , importance: #HIGH }]
+    @UI.identification: [{ position: 85 , importance: #HIGH }]
+    CurrencyCode;
+    
+    @UI.lineItem: [{ position : 95 , importance: #HIGH }]
+    @UI.identification: [{ position: 95 , importance: #HIGH }]
+    BookingStatus;
+    
+    @UI.lineItem: [{ position : 105 , importance: #HIGH }]
+    @UI.identification: [{ position: 105 , importance: #HIGH }]
+    LocalLastChangedAt;
+    /* Associations */
+    //_BookingSupplement;
+    //_Travel;
+    
+}

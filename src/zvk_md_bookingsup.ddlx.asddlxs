@@ -1,0 +1,43 @@
+@Metadata.layer: #CORE
+annotate entity ZVK_BOOKINGSUP_C
+    with 
+{ 
+   @UI.facet: [{ id : 'BookingSupplement',
+                  purpose : #STANDARD ,
+                  type : #IDENTIFICATION_REFERENCE ,
+                  label : 'BookingSupplement',
+                  position : 10 }]
+
+   @UI.hidden: true
+   BookingsupUuid;
+   
+   @UI.hidden: true
+   TravelUuid;
+   
+   @UI.hidden: true
+   BookingUuid;
+   
+    @UI.lineItem: [{ position : 15 , importance: #HIGH }]
+    @UI.identification: [{ position: 15 , importance: #HIGH }]
+   BookingSuppId;
+   
+    @UI.lineItem: [{ position : 25 , importance: #HIGH }]
+    @UI.identification: [{ position: 25 , importance: #HIGH }]
+   SupplementId;
+   
+    @UI.lineItem: [{ position : 35 , importance: #HIGH }]
+    @UI.identification: [{ position: 35 , importance: #HIGH }]
+   Price;
+   
+    @UI.lineItem: [{ position : 45 , importance: #HIGH }]
+    @UI.identification: [{ position: 45 , importance: #HIGH }]
+   CurrencyCode;
+   
+    @UI.lineItem: [{ position : 55 , importance: #HIGH }]
+    @UI.identification: [{ position: 55 , importance: #HIGH }]
+   LocalLastChangedAt;
+   /* Associations */
+   //_Booking;
+   //_Travel;
+    
+}

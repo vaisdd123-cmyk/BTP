@@ -1,0 +1,6 @@
+@EndUserText.label: 'Service Definition for C Travel'
+define service ZVK_SD_C {
+  expose ZVK_TRAVEL_C;
+  expose ZVK_BOOKING_C;
+  expose ZVK_BOOKINGSUP_C;
+}
