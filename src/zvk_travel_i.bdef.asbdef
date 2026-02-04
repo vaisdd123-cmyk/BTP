@@ -1,5 +1,5 @@
 managed implementation in class zbp_vk_travel_i unique;
-strict ( 2 );
+strict ( 2 ); // this ensure we are using the strict syntax
 
 with draft;
 
@@ -9,19 +9,26 @@ draft table ZVK_draft_T
 lock master
 total etag LastChangedAt
 authorization master ( global , instance )
-etag master LocalLastChangedAt
+etag master LocalLastChangedAt // system detect the latest timestamp and prevent overwrite
 {
-  create;
-  update;
-  delete;
-  field (numbering : managed , readonly ) TravelUuid;
-  association _Booking { create; with draft; }
+  create; // user can create new travels
+  update; // user can update or edit the existing travels
+  delete; // user can cancel/delet the entire travel ( including its child booking and bookingsupp)
+  field (numbering : managed , readonly ) TravelUuid;  // non editable field on the fiori screen
+  field(readonly) TravelId;
+  association _Booking { create; with draft; }    // users can do the bookings to the current travel
 
   draft action Edit;
   draft action Discard;
   draft action Resume ;
   draft action Activate optimized;
   draft determine action Prepare ;
+
+  // Determination
+
+  determination setTravelId on save { create; }
+  determination setOverallStatus on modify { create; }
+
 
 
   mapping for ZVK_TRAVEL {

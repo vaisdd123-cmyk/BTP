@@ -8,6 +8,7 @@ CLASS zvk_eml_class DEFINITION
   INTERFACES if_oo_adt_classrun.
   PROTECTED SECTION.
   PRIVATE SECTION.
+    METHODS simple_eml_form_create.
 
 
 ENDCLASS.
@@ -224,12 +225,59 @@ CLASS zvk_eml_class IMPLEMENTATION.
   out->write( 'READ operation with Booking association' ).
 
 
+* Case 5 - If an attempt is made to be READ with an invalid GUID ( Only lt_failed is filled in )
+
+  READ ENTITIES OF ZVK_TRAVEL_I
+  ENTITY Travel
+  ALL FIELDS WITH VALUE #( ( TravelUuid = ' ' ) )
+  RESULT DATA(lt_case5)
+  FAILED DATA(lt_failed5)
+  REPORTED DATA(lt_reported5).
+
+  out->write( 'Trying to read a record that does not exist' ).
 
 
+    ENDMETHOD.
 
 
+    METHOD simple_eml_form_create.
+* EML Create and Declaration of data objects using BDEF derived types
 
+    DATA : cr_tab TYPE TABLE FOR CREATE ZVK_TRAVEL_I,
+           mapped_r TYPE RESPONSE FOR MAPPED ZVK_TRAVEL_I,
+           failed_r TYPE RESPONSE FOR FAILED ZVK_TRAVEL_I,
+           reported_r TYPE RESPONSE FOR REPORTED ZVK_TRAVEL_I.
 
+    cr_tab = VALUE #( ( %cid = 'cid1'
+                        TravelId = 1
+                        AgencyId = 'AG01'
+                        CustomerId = 'C01'
+                        BookingFee = 1090
+                        TotalPrice = 1090
+                        CurrencyCode = 'USD'
+                        Description = 'EML Create for Travel ID 1' )
+
+                      ( %cid = 'cid2'   "Just to demo %data and %key you can specify fields with or without the derived type components
+
+                        %data = VALUE #(  TravelId = 2
+                                           AgencyId = 'AG02'
+                                           CustomerId = 'C02'
+                                           BookingFee = 1092
+                                           TotalPrice = 1092
+                                           CurrencyCode = 'USD'
+                                           Description = 'EML Create for Travel ID 2' ) ) ).
+
+* root_ent must be the full name of root entity , it is basically name of the BDEF
+
+  MODIFY ENTITY  ZVK_TRAVEL_I
+  CREATE "determines the kind of operation
+  FIELDS ( AgencyId CustomerId BookingFee CurrencyCode Description ) WITH cr_tab " Fields to be respected for input derived type and the
+                                                                                 " input derived type itself
+  MAPPED mapped_r   "mapping info
+  FAILED failed_r   "information on failures with instances
+  REPORTED reported_r. "messages
+
+  COMMIT ENTITIES.
 
 
     ENDMETHOD.
