@@ -149,7 +149,7 @@ CLASS zvk_eml_class IMPLEMENTATION.
 
   DATA : lt_update TYPE TABLE FOR UPDATE ZVK_TRAVEL_I.
 
-  lt_update = VALUE #( ( TravelUuid = '' CurrencyCode = ' ' Description = ' ' BookingFee = 40 ) ).
+  lt_update = VALUE #( ( TravelUuid = '7E5BF75F6D161FD180BC79432A262E69' CurrencyCode = 'USD' Description = 'Currency code has been changed ' BookingFee = 40 ) ).
 
   MODIFY ENTITIES OF ZVK_TRAVEL_I
   ENTITY Travel
@@ -167,7 +167,7 @@ CLASS zvk_eml_class IMPLEMENTATION.
 
   DATA: lt_delete TYPE TABLE FOR DELETE ZVK_TRAVEL_I.
 
-  lt_delete = VALUE #( ( TravelUuid = ' ' ) ).
+  lt_delete = VALUE #( ( TravelUuid = '7E5BF75F6D161FD180BC79432A26CE69 ' ) ).
 
   MODIFY ENTITIES OF ZVK_TRAVEL_I
   ENTITY Travel
@@ -188,7 +188,7 @@ CLASS zvk_eml_class IMPLEMENTATION.
 
   READ ENTITIES OF ZVK_TRAVEL_I
   ENTITY Travel
-  FROM VALUE #( ( TravelUuid = ' ' ) )
+  FROM VALUE #( ( TravelUuid = 'EE3D176152061FD0BFA03675AABBB1CD ' ) )  " V01
   RESULT DATA(lt_case1).
 
   out->write( 'READ operation without FIELDS keyword' ).
@@ -199,7 +199,7 @@ CLASS zvk_eml_class IMPLEMENTATION.
   READ ENTITIES OF ZVK_TRAVEL_I
   ENTITY Travel
   FIELDS ( TravelId AgencyId )
-  WITH VALUE #( ( TravelUuid = ' ' ) )
+  WITH VALUE #( ( TravelUuid = 'EE3D176152061FD0BFA03675AABBB1CD ' ) )
   RESULT DATA(lt_case2).
 
   out->write( 'READ operation with FIELDS Keyword' ).
@@ -209,7 +209,7 @@ CLASS zvk_eml_class IMPLEMENTATION.
 
   READ ENTITIES OF ZVK_TRAVEL_I
   ENTITY Travel
-  ALL FIELDS WITH VALUE #( ( TravelUuid = ' ' ) )
+  ALL FIELDS WITH VALUE #( ( TravelUuid = 'EE3D176152061FD0BFA03675AABBB1CD ' ) )
   RESULT DATA(lt_case3).
 
   out->write( 'READ operation with ALL FIELDS keyword' ).
@@ -219,7 +219,7 @@ CLASS zvk_eml_class IMPLEMENTATION.
   READ ENTITIES OF ZVK_TRAVEL_I
   ENTITY Travel
   BY \_Booking
-  ALL FIELDS WITH VALUE #( ( TravelUuid  = ' ' ) )
+  ALL FIELDS WITH VALUE #( ( TravelUuid  = 'EE3D176152061FD0BFA03675AABBB1CD ' ) )
   RESULT DATA(lt_case4).
 
   out->write( 'READ operation with Booking association' ).
@@ -229,7 +229,7 @@ CLASS zvk_eml_class IMPLEMENTATION.
 
   READ ENTITIES OF ZVK_TRAVEL_I
   ENTITY Travel
-  ALL FIELDS WITH VALUE #( ( TravelUuid = ' ' ) )
+  ALL FIELDS WITH VALUE #( ( TravelUuid = 'EE3D176152061FD0BFA03675AABBB1CD ' ) )
   RESULT DATA(lt_case5)
   FAILED DATA(lt_failed5)
   REPORTED DATA(lt_reported5).

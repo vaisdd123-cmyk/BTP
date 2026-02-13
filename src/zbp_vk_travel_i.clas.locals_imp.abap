@@ -1,3 +1,168 @@
+CLASS lhc_bookingsupplement DEFINITION INHERITING FROM cl_abap_behavior_handler.
+
+  PRIVATE SECTION.
+
+    METHODS SetBookingSuppId FOR DETERMINE ON SAVE
+      IMPORTING keys FOR BookingSupplement~SetBookingSuppId.
+
+ENDCLASS.
+
+CLASS lhc_bookingsupplement IMPLEMENTATION.
+
+  METHOD SetBookingSuppId.
+
+  DATA : max_bookingsupplid TYPE ZBSUP_ID,
+         bookingsuppliment TYPE STRUCTURE FOR READ RESULT ZVK_BOOKINGSUP_I,
+         bookingsuppl_update TYPE TABLE FOR UPDATE ZVK_TRAVEL_I\\BookingSupplement.
+
+  READ ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY BookingSupplement BY \_Booking
+  FIELDS ( BookingUuid )
+  WITH CORRESPONDING #( keys )
+  RESULT DATA(bookings).
+
+  READ ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Booking BY \_BookingSupplement
+  FIELDS (  BookingsupUuid )
+  WITH CORRESPONDING #( bookings )
+  LINK DATA(bookingsuppl_links)
+  RESULT DATA(Bookingsuppliments).
+
+  LOOP AT bookings INTO DATA(booking).
+
+  " Initialize the Booking ID number
+
+  max_bookingsupplid = '00'.
+
+  LOOP AT bookingsuppl_links INTO DATA(bookingsuppl_link) USING KEY ID WHERE source-%tky = booking-%tky.
+
+  bookingsuppliment = Bookingsuppliments[ key id
+                      %tky = bookingsuppl_link-target-%tky ].
+
+  IF bookingsuppliment-BookingSuppId > max_bookingsupplid.
+
+  max_bookingsupplid = bookingsuppliment-BookingSuppId.
+
+  ENDIF.
+
+  ENDLOOP.
+
+
+  LOOP AT bookingsuppl_links INTO bookingsuppl_link USING KEY ID WHERE source-%tky = booking-%tky.
+
+  bookingsuppliment = Bookingsuppliments[ key id
+                      %tky = bookingsuppl_link-target-%tky ].
+
+  IF bookingsuppliment-BookingSuppId IS INITIAL.
+
+  max_bookingsupplid += 1.
+
+  APPEND VALUE #( %tky = bookingsuppliment-%tky
+                 BookingSuppId = max_bookingsupplid )
+                 to bookingsuppl_update.
+
+  ENDIF.
+  ENDLOOP.
+  ENDLOOP.
+
+  MODIFY ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY BookingSupplement
+  UPDATE FIELDS ( BookingSuppId )
+  WITH bookingsuppl_update.
+
+
+  ENDMETHOD.
+
+ENDCLASS.
+
+CLASS lhc_booking DEFINITION INHERITING FROM cl_abap_behavior_handler.
+
+  PRIVATE SECTION.
+
+    METHODS setBookinDate FOR DETERMINE ON SAVE
+      IMPORTING keys FOR Booking~setBookinDate.
+
+    METHODS setBookingId FOR DETERMINE ON SAVE
+      IMPORTING keys FOR Booking~setBookingId.
+
+ENDCLASS.
+
+CLASS lhc_booking IMPLEMENTATION.
+
+  METHOD setBookinDate.
+  ENDMETHOD.
+
+  METHOD setBookingId.
+
+  DATA : max_bookingid TYPE ZB_ID,
+         booking TYPE STRUCTURE FOR READ RESULT ZVK_BOOKING_I,
+         bookings_update TYPE TABLE  FOR UPDATE ZVK_TRAVEL_I\\Booking.
+
+
+" We are reading Booking entity  to get the Uuid field for the current booking instance and store that in travels table
+
+  READ ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Booking BY \_Travel
+  FIELDS ( TravelUuid )
+  WITH CORRESPONDING #( keys )
+  RESULT DATA(travels).
+
+" Now read all the booking related to travel details which we got from the travels table
+
+  READ ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Travel BY \_Booking
+  FIELDS ( BookingId )
+  WITH CORRESPONDING #( travels )
+  LINK DATA(booking_links)
+  RESULT DATA(bookings).
+
+  LOOP AT travels INTO DATA(travel).
+
+  " Initialize the Booking ID number
+
+  max_bookingid = '0000'.
+
+  LOOP AT booking_links INTO DATA(booking_link) USING KEY ID WHERE source-%tky = travel-%tky.
+
+  booking = bookings[ key id
+                      %tky = booking_link-target-%tky  ].
+
+  if booking-BookingId > max_bookingid.
+
+  max_bookingid = booking-BookingId.
+
+  ENDIF.
+  ENDLOOP.
+
+  LOOP AT booking_links INTO booking_link USING KEY ID WHERE source-%tky = travel-%tky.
+
+  booking = bookings[ key id
+                      %tky = booking_link-target-%tky  ].
+
+  IF booking-Bookingid IS INITIAL.
+
+  max_bookingid += 1.
+
+  APPEND VALUE #( %tky = booking-%tky
+                  BookingId = max_bookingid
+                   ) to bookings_update.
+
+  ENDIF.
+  ENDLOOP.
+  ENDLOOP.
+
+  " Use Modify EML to Update the Bookings entity with the new Booking id num which is max_bookingid
+
+  MODIFY ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Booking
+  UPDATE FIELDS ( Bookingid )
+  WITH bookings_update.
+
+
+  ENDMETHOD.
+
+ENDCLASS.
+
 CLASS lhc_Travel DEFINITION INHERITING FROM cl_abap_behavior_handler.
   PRIVATE SECTION.
 

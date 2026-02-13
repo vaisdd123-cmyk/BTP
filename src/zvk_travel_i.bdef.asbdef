@@ -26,8 +26,8 @@ etag master LocalLastChangedAt // system detect the latest timestamp and prevent
 
   // Determination
 
-  determination setTravelId on save { create; }
-  determination setOverallStatus on modify { create; }
+  determination setTravelId on save { create;update; }
+  determination setOverallStatus on modify { create; update;}
 
 
 
@@ -60,9 +60,13 @@ etag master LocalLastChangedAt
 {
   update;
   delete;
+  field ( readonly ) TravelUuid , BookingId;
   field ( readonly ) BookingUuid;
   association _Travel {with draft;}
   association _BookingSupplement { create; with draft;}
+
+  determination setBookingId on save { create;}
+  determination setBookinDate on save { create; }
 
   mapping for ZVK_Booking{
   BookingUuid = booking_uuid;
@@ -91,8 +95,13 @@ etag master LocalLastChangedAt
   delete;
   field ( numbering : managed , readonly ) BookingsupUuid;
   field ( readonly : update) BookingUuid , TravelUuid;
+  field ( readonly ) BookingSuppId;
+
   association _Travel {with draft;}
   association _Booking {with draft;}
+
+  determination SetBookingSuppId on save { create; }
+
 
   mapping for ZVK_BOOKINGSUP {
 
