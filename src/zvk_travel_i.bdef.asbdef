@@ -29,7 +29,12 @@ etag master LocalLastChangedAt // system detect the latest timestamp and prevent
   determination setTravelId on save { create;update; }
   determination setOverallStatus on modify { create; update;}
 
+  // Action
 
+  action acceptTravel result [1] $self;
+  action rejectTravel result [1] $self;
+
+  action deductDiscount parameter ZVK_Discount result [1] $self { default function GetDefaultsForDeductDiscount; }
 
   mapping for ZVK_TRAVEL {
   TravelUuid = travel_uuid;

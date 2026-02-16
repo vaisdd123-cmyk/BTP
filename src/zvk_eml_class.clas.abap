@@ -15,7 +15,8 @@ ENDCLASS.
 
 
 
-CLASS zvk_eml_class IMPLEMENTATION.
+CLASS ZVK_EML_CLASS IMPLEMENTATION.
+
 
     METHOD if_oo_adt_classrun~main.
 

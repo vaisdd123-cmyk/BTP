@@ -175,6 +175,16 @@ CLASS lhc_Travel DEFINITION INHERITING FROM cl_abap_behavior_handler.
       IMPORTING keys FOR Travel~setTravelId.
     METHODS setOverallStatus FOR DETERMINE ON MODIFY
       IMPORTING keys FOR Travel~setOverallStatus.
+    METHODS acceptTravel FOR MODIFY
+      IMPORTING keys FOR ACTION Travel~acceptTravel RESULT result.
+
+    METHODS rejectTravel FOR MODIFY
+      IMPORTING keys FOR ACTION Travel~rejectTravel RESULT result.
+    METHODS deductDiscount FOR MODIFY
+      IMPORTING keys FOR ACTION Travel~deductDiscount RESULT result.
+    METHODS GetDefaultsForDeductDiscount FOR READ
+      IMPORTING keys FOR FUNCTION Travel~GetDefaultsForDeductDiscount RESULT result.
+
 
 ENDCLASS.
 
@@ -232,6 +242,67 @@ CLASS lhc_Travel IMPLEMENTATION.
                 OverallStatus = 'O' ) ).
 
 
+
+  ENDMETHOD.
+
+  METHOD acceptTravel.
+
+  MODIFY ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Travel
+  UPDATE FIELDS ( OverallStatus )
+  WITH VALUE #( for key IN KEYS ( %tky = key-%tky
+                                  OverallStatus = 'A' ) ).
+
+  READ ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Travel
+  ALL FIELDS WITH CORRESPONDING #( keys )
+  RESULT DATA(travels).
+
+
+  result = VALUE #( FOR travel IN travels ( %tky = travel-%tky
+                                            %param = travel ) ).
+
+  ENDMETHOD.
+
+  METHOD rejectTravel.
+
+  MODIFY ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Travel
+  UPDATE FIELDS ( OverallStatus )
+  WITH VALUE #( for key IN KEYS ( %tky = key-%tky
+                                  OverallStatus = 'R' ) ).
+
+  READ ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Travel
+  ALL FIELDS WITH CORRESPONDING #( keys )
+  RESULT DATA(travels).
+
+
+  result = VALUE #( FOR travel IN travels ( %tky = travel-%tky
+                                            %param = travel ) ).
+  ENDMETHOD.
+
+  METHOD deductDiscount.
+  ENDMETHOD.
+
+  METHOD GetDefaultsForDeductDiscount.
+
+  READ ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Travel
+  FIELDS ( TotalPrice )
+  WITH CORRESPONDING #( keys )
+  RESULT DATA(travels).
+
+  LOOP AT travels INTO DATA(travel).
+  IF travel-TotalPrice >= 4000.
+     APPEND VALUE #( %tky = travel-%tky
+                     %param-discount_percent = 30 ) TO result.
+
+  ELSE.
+        APPEND VALUE #( %tky = travel-%tky
+                     %param-discount_percent = 15 ) TO result.
+  ENDIF.
+  ENDLOOP.
 
   ENDMETHOD.
 

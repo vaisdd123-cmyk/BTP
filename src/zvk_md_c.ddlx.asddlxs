@@ -20,8 +20,13 @@ annotate entity ZVK_TRAVEL_C
     @UI.hidden: true
     TravelUuid;
     
-    @UI.lineItem: [{ position : 15 , importance: #HIGH }]
-    @UI.identification: [{ position: 15 , importance: #HIGH }]
+    @UI.lineItem: [{ position : 15 , importance: #HIGH } , 
+                   { type : #FOR_ACTION , dataAction: 'acceptTravel', label: 'Accept Travel' , invocationGrouping: #CHANGE_SET } ,
+                   { type : #FOR_ACTION , dataAction: 'rejectTravel', label: 'Reject Travel' , invocationGrouping: #CHANGE_SET } ,
+                   { type : #FOR_ACTION , dataAction: 'deductDiscount', label: 'Discount' , invocationGrouping: #CHANGE_SET } ]
+    @UI.identification: [{ position: 15 , importance: #HIGH } ,
+                      { type : #FOR_ACTION , dataAction: 'acceptTravel', label: 'Accept Travel' , invocationGrouping: #CHANGE_SET } ,
+                   { type : #FOR_ACTION , dataAction: 'rejectTravel', label: 'Reject Travel' , invocationGrouping: #CHANGE_SET }]
     TravelId;
     
     @UI.lineItem: [{ position : 25 , importance: #HIGH }]
