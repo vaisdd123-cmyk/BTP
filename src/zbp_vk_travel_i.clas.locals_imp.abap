@@ -4,6 +4,8 @@ CLASS lhc_bookingsupplement DEFINITION INHERITING FROM cl_abap_behavior_handler.
 
     METHODS SetBookingSuppId FOR DETERMINE ON SAVE
       IMPORTING keys FOR BookingSupplement~SetBookingSuppId.
+    METHODS calculateTotalPrice FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR BookingSupplement~calculateTotalPrice.
 
 ENDCLASS.
 
@@ -73,6 +75,23 @@ CLASS lhc_bookingsupplement IMPLEMENTATION.
 
   ENDMETHOD.
 
+  METHOD calculateTotalPrice.
+
+  READ ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY BookingSupplement BY \_Travel
+  FIELDS ( TravelUuid )
+  WITH CORRESPONDING #( keys )
+  RESULT DATA(travels).
+
+  MODIFY ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Travel
+  EXECUTE reCalTotalPrice
+  FROM CORRESPONDING #( travels ).
+
+
+
+  ENDMETHOD.
+
 ENDCLASS.
 
 CLASS lhc_booking DEFINITION INHERITING FROM cl_abap_behavior_handler.
@@ -84,6 +103,8 @@ CLASS lhc_booking DEFINITION INHERITING FROM cl_abap_behavior_handler.
 
     METHODS setBookingId FOR DETERMINE ON SAVE
       IMPORTING keys FOR Booking~setBookingId.
+    METHODS calculateTotalPrice FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR Booking~calculateTotalPrice.
 
 ENDCLASS.
 
@@ -158,6 +179,22 @@ CLASS lhc_booking IMPLEMENTATION.
   UPDATE FIELDS ( Bookingid )
   WITH bookings_update.
 
+  ENDMETHOD.
+
+  METHOD calculateTotalPrice.
+
+  READ ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Booking BY \_Travel
+  FIELDS ( TravelUuid )
+  WITH CORRESPONDING #( keys )
+  RESULT DATA(travels).
+
+  MODIFY ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Travel
+  EXECUTE reCalTotalPrice
+  FROM CORRESPONDING #( travels ).
+
+
 
   ENDMETHOD.
 
@@ -184,6 +221,10 @@ CLASS lhc_Travel DEFINITION INHERITING FROM cl_abap_behavior_handler.
       IMPORTING keys FOR ACTION Travel~deductDiscount RESULT result.
     METHODS GetDefaultsForDeductDiscount FOR READ
       IMPORTING keys FOR FUNCTION Travel~GetDefaultsForDeductDiscount RESULT result.
+    METHODS reCalTotalPrice FOR MODIFY
+      IMPORTING keys FOR ACTION Travel~reCalTotalPrice.
+    METHODS calculateTotalPrice FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR Travel~calculateTotalPrice.
 
 
 ENDCLASS.
@@ -283,6 +324,72 @@ CLASS lhc_Travel IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD deductDiscount.
+
+  DATA : travel_for_update TYPE TABLE FOR UPDATE ZVK_TRAVEL_I.
+
+  data(keys_temp) = keys.
+
+* Checking the validation for the Discount if it is >0 or <100.
+
+ LOOP AT keys_temp ASSIGNING FIELD-SYMBOL(<key_temp>) WHERE %param-discount_percent is INITIAL or
+                                                            %param-discount_percent  > 100 or
+                                                            %param-discount_percent < 0.
+
+  APPEND VALUE #( %tky = <key_temp>-%tky ) to failed-travel.
+  APPEND VALUE #( %tky = <key_temp>-%tky
+                  %msg = new_message_with_text( text = 'Invalid Discount Percentage'
+                                                severity = if_abap_behv_message=>severity-error )
+                  %element-totalprice = if_abap_behv=>mk-on
+                  %action-deductDiscount = if_abap_behv=>mk-on ) to reported-travel.
+
+  delete keys_temp.
+  ENDLOOP.
+
+  CHECK keys_temp is NOT INITIAL.
+
+* Reading Travel data
+  READ ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Travel
+  FIELDS ( TotalPrice )
+  WITH CORRESPONDING #( keys )
+  RESULT DATA(lt_travels).
+
+  data : lv_percentage type decfloat16.
+
+  LOOP AT lt_travels ASSIGNING FIELD-SYMBOL(<fs_travel>).
+
+  DATA(lv_discount_percent) = keys[ key id %tky = <fs_travel>-%tky ]-%param-discount_percent.
+
+  lv_percentage = lv_discount_percent / 100.
+
+  data(reduced_value) = <fs_travel>-TotalPrice * lv_percentage.
+  reduced_value = <fs_travel>-TotalPrice - reduced_value.
+
+  APPEND VALUE #( %tky = <fs_travel>-%tky
+                  totalprice = reduced_value ) to travel_for_update.
+
+  ENDLOOP.
+
+* Updating Travel BO
+
+  MODIFY ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Travel
+  UPDATE FIELDS ( TotalPrice )
+  WITH travel_for_update.
+
+  READ ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Travel
+  ALL FIELDS WITH CORRESPONDING #( keys )
+  RESULT DATA(lt_travel_updated).
+
+* Sending back that information by using the Result  Parameter.
+
+  result = value #( for ls_travel in lt_travel_updated ( %tky = ls_travel-%tky
+                                                         %param = ls_travel ) ).
+
+
+
+
   ENDMETHOD.
 
   METHOD GetDefaultsForDeductDiscount.
@@ -303,6 +410,108 @@ CLASS lhc_Travel IMPLEMENTATION.
                      %param-discount_percent = 15 ) TO result.
   ENDIF.
   ENDLOOP.
+
+  ENDMETHOD.
+
+  METHOD reCalTotalPrice.
+
+  TYPES :BEGIN OF ty_amount_per_currencycode,
+         amount TYPE /dmo/total_price,
+         currency_code TYPE /dmo/currency_code,
+         END OF ty_amount_per_currencycode.
+
+   DATA : amounts_per_currencycode TYPE STANDARD TABLE OF ty_amount_per_currencycode.
+
+  READ ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Travel
+  FIELDS ( bookingfee currencycode )
+  WITH CORRESPONDING #( keys )
+  RESULT DATA(travels).
+
+  READ ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Travel BY \_Booking
+  FIELDS ( flightprice currencycode )
+  WITH CORRESPONDING #( travels )
+  RESULT DATA(bookings)
+  LINK DATA(booking_links).
+
+
+  READ ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Booking BY \_BookingSupplement
+  FIELDS ( Price currencycode )
+  WITH CORRESPONDING #( bookings )
+  RESULT DATA(bookingsuppliments)
+  LINK DATA(bookingsuppliment_links).
+
+  LOOP AT travels ASSIGNING FIELD-SYMBOL(<travel>).
+
+  amounts_per_currencycode = VALUE #( ( amount = <travel>-BookingFee
+                                        currency_code = <travel>-CurrencyCode ) ).
+
+  LOOP AT booking_links INTO DATA(booking_link) using key id WHERE source-%tky = <travel>-%tky.
+
+  DATA(booking) = bookings[ key id %tky = booking_link-target-%tky ].
+
+  COLLECT VALUE ty_amount_per_currencycode( amount = booking-flightprice
+                                            currency_code = booking-CurrencyCode ) INTO amounts_per_currencycode.
+
+  LOOP AT bookingsuppliment_links INTO DATA(bookingsuppliment_link) USING KEY ID WHERE source-%tky = booking-%tky.
+
+  DATA(bookingsuppliment) = bookingsuppliments[ key id %tky = bookingsuppliment_link-target-%tky ].
+
+  COLLECT VALUE ty_amount_per_currencycode( amount = bookingsuppliment-price
+                                            currency_code = bookingsuppliment-CurrencyCode ) INTO amounts_per_currencycode.
+
+
+
+  ENDLOOP.
+  ENDLOOP.
+  ENDLOOP.
+
+  DELETE amounts_per_currencycode WHERE currency_code IS INITIAL.
+  LOOP AT amounts_per_currencycode INTO DATA(amount_per_currencycode).
+
+" Travel USD -> PARENT - Total Price
+" Booking EUR -> USD
+" Booking Suppl EUR -> USD
+
+  IF <travel>-CurrencyCode = amount_per_currencycode-currency_code.
+
+    <travel>-TotalPrice += amount_per_currencycode-amount.
+
+  ELSE.
+
+   /dmo/cl_flight_amdp=>convert_currency(
+              EXPORTING
+              iv_amount = amount_per_currencycode-amount
+              iv_currency_code_source = amount_per_currencycode-currency_code
+              iv_currency_code_target = <travel>-CurrencyCode
+              iv_exchange_rate_date = cl_abap_context_info=>get_system_date( )
+              IMPORTING
+               ev_amount =  DATA(total_booking_price_per_curr) ).
+
+       <travel>-TotalPrice += total_booking_price_per_curr.
+
+ ENDIF.
+
+  MODIFY ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Travel
+  UPDATE FIELDS ( TotalPrice )
+  WITH CORRESPONDING #( travels ).
+
+ ENDLOOP.
+
+  ENDMETHOD.
+
+  METHOD calculateTotalPrice.
+
+  MODIFY ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Travel
+  EXECUTE reCalTotalPrice
+  FROM CORRESPONDING #( keys ).
+
+
+
 
   ENDMETHOD.
 
