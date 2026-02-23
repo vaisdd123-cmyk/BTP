@@ -225,6 +225,13 @@ CLASS lhc_Travel DEFINITION INHERITING FROM cl_abap_behavior_handler.
       IMPORTING keys FOR ACTION Travel~reCalTotalPrice.
     METHODS calculateTotalPrice FOR DETERMINE ON MODIFY
       IMPORTING keys FOR Travel~calculateTotalPrice.
+    METHODS ValidateCustomer FOR VALIDATE ON SAVE
+      IMPORTING keys FOR Travel~ValidateCustomer.
+    METHODS ValidateAgency FOR VALIDATE ON SAVE
+      IMPORTING keys FOR Travel~ValidateAgency.
+
+    METHODS ValidateDate FOR VALIDATE ON SAVE
+      IMPORTING keys FOR Travel~ValidateDate.
 
 
 ENDCLASS.
@@ -512,6 +519,124 @@ CLASS lhc_Travel IMPLEMENTATION.
 
 
 
+
+  ENDMETHOD.
+
+  METHOD ValidateCustomer.
+
+* Reading the data entered by the user
+
+  READ ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Travel
+  FIELDS ( CustomerId )
+  WITH CORRESPONDING #( keys )
+  RESULT DATA(travels).
+
+  DATA customers TYPE SORTED TABLE OF /dmo/customer WITH UNIQUE KEY customer_id.
+
+  customers = CORRESPONDING #( travels DISCARDING DUPLICATES MAPPING customer_id = CustomerId EXCEPT * ).
+
+  SELECT FROM /dmo/customer FIELDS customer_id
+  FOR ALL ENTRIES IN @customers
+  WHERE customer_id = @customers-customer_id
+  INTO TABLE @DATA(valid_customers).
+
+  LOOP AT travels INTO DATA(travel).
+
+  IF travel-CustomerId IS NOT INITIAL AND NOT line_exists( valid_customers[ customer_id = travel-CustomerId ] ).
+  APPEND VALUE #( %tky = travel-%tky ) to failed-travel.
+  APPEND VALUE #( %tky = travel-%tky
+                  %msg = new_message_with_text(
+                  severity = if_abap_behv_message=>severity-error
+                                                text = |Not a valid customer { travel-CustomerId } | )
+                  %element-CustomerId = if_abap_behv=>mk-on ) to reported-travel.
+
+  ENDIF.
+
+  ENDLOOP.
+
+  ENDMETHOD.
+
+  METHOD ValidateAgency.
+
+  READ ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Travel
+  FIELDS ( AgencyId )
+  WITH CORRESPONDING #( keys )
+  RESULT DATA(travels).
+
+  DATA agencies TYPE SORTED TABLE OF /dmo/agency WITH UNIQUE KEY agency_id.
+
+  agencies = CORRESPONDING #( travels DISCARDING DUPLICATES MAPPING agency_id = AgencyId EXCEPT * ).
+
+  SELECT FROM /dmo/agency FIELDS agency_id
+  FOR ALL ENTRIES IN @agencies
+  WHERE agency_id = @agencies-agency_id
+  INTO TABLE @DATA(valid_agencies).
+
+  LOOP AT travels INTO DATA(travel).
+
+  IF travel-AgencyId IS NOT INITIAL AND NOT line_exists( valid_agencies[ agency_id = travel-AgencyId ] ).
+  APPEND VALUE #( %tky = travel-%tky ) to failed-travel.
+  APPEND VALUE #( %tky = travel-%tky
+                  %msg = new_message_with_text( severity = if_abap_behv_message=>severity-error
+                                                text = |Not a valid customer { travel-AgencyId } | )
+                  %element-AgencyId = if_abap_behv=>mk-on ) to reported-travel.
+  ENDIF.
+  ENDLOOP.
+
+  ENDMETHOD.
+
+  METHOD ValidateDate.
+
+  READ ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Travel
+  FIELDS ( BeginDate EndDate )
+  WITH CORRESPONDING #( keys )
+  RESULT DATA(travels).
+
+  LOOP AT travels INTO DATA(travel).
+
+  IF travel-BeginDate IS INITIAL.
+
+  APPEND VALUE #( %tky = travel-%tky ) to failed-travel.
+  APPEND VALUE #( %tky = travel-%tky
+                  %msg = new_message_with_text( severity = if_abap_behv_message=>severity-error
+                                                text = |Begin date should not be blank | )
+                  %element-BeginDate = if_abap_behv=>mk-on ) to reported-travel.
+
+
+  ENDIF.
+
+  IF travel-EndDate IS INITIAL.
+
+
+    APPEND VALUE #( %tky = travel-%tky ) to failed-travel.
+  APPEND VALUE #( %tky = travel-%tky
+                  %msg = new_message_with_text( severity = if_abap_behv_message=>severity-error
+                                                text = |End date should not be blank | )
+                  %element-EndDate = if_abap_behv=>mk-on ) to reported-travel.
+
+
+
+  ENDIF.
+
+  IF travel-EndDate < travel-BeginDate AND travel-BeginDate IS NOT INITIAL
+                                       AND travel-EndDate IS NOT INITIAL.
+
+   APPEND VALUE #( %tky = travel-%tky ) to failed-travel.
+
+   APPEND VALUE #( %tky = travel-%tky
+                  %msg = new_message_with_text( severity = if_abap_behv_message=>severity-error
+                                                text = |End date should not be less than Begin Date | )
+                  %element-BeginDate = if_abap_behv=>mk-on
+                  %element-EndDate = if_abap_behv=>mk-on ) to reported-travel.
+
+
+
+  ENDIF.
+
+  ENDLOOP.
 
   ENDMETHOD.
 
