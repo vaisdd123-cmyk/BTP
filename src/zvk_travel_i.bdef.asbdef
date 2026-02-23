@@ -15,33 +15,58 @@ etag master LocalLastChangedAt // system detect the latest timestamp and prevent
   update; // user can update or edit the existing travels
   delete; // user can cancel/delet the entire travel ( including its child booking and bookingsupp)
   field (numbering : managed , readonly ) TravelUuid;  // non editable field on the fiori screen
-  field(readonly) TravelId;
+// static behavior field
+  field(readonly) TravelId,OverallStatus;
+  field (features : instance) BookingFee;
   association _Booking { create; with draft; }    // users can do the bookings to the current travel
 
   draft action Edit;
   draft action Discard;
   draft action Resume ;
   draft action Activate optimized;
-  draft determine action Prepare ;
+  draft determine action Prepare
+  {
+    validation ValidateCustomer;
+    validation ValidateAgency;
+    validation ValidateDate;
+
+  }
 
   // Determination
 
   determination setTravelId on save { create;update; }
   determination setOverallStatus on modify { create; update;}
+  determination calculateTotalPrice on modify {create; field BookingFee , CurrencyCode; }
+
 
   // Validation
 
   validation ValidateCustomer on save { create; field CustomerId ; }
   validation ValidateAgency on save { create; field AgencyId ; }
   validation ValidateDate on save { create; field BeginDate; field EndDate ; }
+//  validation get_
   // Action
+// Dynamic feacture instances
+  action (features : instance) acceptTravel result [1] $self;
+  action (features : instance) rejectTravel result [1] $self;
 
-  action acceptTravel result [1] $self;
-  action rejectTravel result [1] $self;
+  action (features : instance) deductDiscount parameter ZVK_Discount result [1] $self { default function GetDefaultsForDeductDiscount; }
 
-  action deductDiscount parameter ZVK_Discount result [1] $self { default function GetDefaultsForDeductDiscount; }
-  determination calculateTotalPrice on modify {create; field BookingFee , CurrencyCode; }
   internal action reCalTotalPrice;
+
+  determine action validateCustomerID { validation ValidateCustomer;}
+  determine action validateAgencyID { validation ValidateAgency;}
+  determine action validateDatesVal  { validation   ValidateDate ;}
+
+  side effects {
+
+    field BookingFee affects field TotalPrice;
+
+   determine action validateCustomerID executed on field CustomerId affects messages;
+   determine action validateAgencyID executed on field AgencyId affects messages;
+   determine action validateDatesVal executed on field BeginDate, field EndDate affects messages;
+  }
+
 
   mapping for ZVK_TRAVEL {
   TravelUuid = travel_uuid;
@@ -85,6 +110,7 @@ etag master LocalLastChangedAt
   side effects {
 
            field FlightPrice affects field _Travel.TotalPrice ;
+
   }
 
 

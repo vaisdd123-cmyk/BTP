@@ -232,6 +232,8 @@ CLASS lhc_Travel DEFINITION INHERITING FROM cl_abap_behavior_handler.
 
     METHODS ValidateDate FOR VALIDATE ON SAVE
       IMPORTING keys FOR Travel~ValidateDate.
+    METHODS get_instance_features FOR INSTANCE FEATURES
+      IMPORTING keys REQUEST requested_features FOR Travel RESULT result.
 
 
 ENDCLASS.
@@ -543,9 +545,14 @@ CLASS lhc_Travel IMPLEMENTATION.
 
   LOOP AT travels INTO DATA(travel).
 
+  APPEND VALUE #( %tky = travel-%tky
+                   %state_area = 'VALIDATE_CUUSTOMER' ) TO reported-travel.
+
   IF travel-CustomerId IS NOT INITIAL AND NOT line_exists( valid_customers[ customer_id = travel-CustomerId ] ).
   APPEND VALUE #( %tky = travel-%tky ) to failed-travel.
   APPEND VALUE #( %tky = travel-%tky
+
+        %state_area = 'VALIDATE_CUUSTOMER'
                   %msg = new_message_with_text(
                   severity = if_abap_behv_message=>severity-error
                                                 text = |Not a valid customer { travel-CustomerId } | )
@@ -637,6 +644,33 @@ CLASS lhc_Travel IMPLEMENTATION.
   ENDIF.
 
   ENDLOOP.
+
+  ENDMETHOD.
+
+  METHOD get_instance_features.
+
+  READ ENTITIES OF ZVK_TRAVEL_I IN LOCAL MODE
+  ENTITY Travel
+  FIELDS ( OverallStatus )
+  WITH CORRESPONDING #( keys )
+  RESULT DATA(travels).
+
+  result = VALUE #( for ls_travel in travels
+                    ( %tky = ls_travel-%tky
+                      %field-BookingFee = COND #( when ls_travel-OverallStatus = 'A'
+                                                  THEN if_abap_behv=>fc-f-read_only
+                                                  ELSE if_abap_behv=>fc-f-unrestricted )
+
+                      %action-acceptTravel =  COND #( when ls_travel-OverallStatus = 'A'
+                                                  THEN if_abap_behv=>fc-o-disabled
+                                                  ELSE if_abap_behv=>fc-o-enabled )
+                      %action-rejectTravel =  COND #( when ls_travel-OverallStatus = 'R'
+                                                  THEN if_abap_behv=>fc-o-disabled
+                                                  ELSE if_abap_behv=>fc-o-enabled )
+                      %action-deductDiscount =  COND #( when ls_travel-OverallStatus = 'A'
+                                                  THEN if_abap_behv=>fc-o-disabled
+                                                  ELSE if_abap_behv=>fc-o-enabled )                                             ) ).
+
 
   ENDMETHOD.
 
