@@ -5,6 +5,7 @@ with draft;
 
 define behavior for ZVK_TRAVEL_I alias Travel
 persistent table zvk_travel
+with additional save
 draft table ZVK_draft_T
 lock master
 total etag LastChangedAt
@@ -16,7 +17,8 @@ etag master LocalLastChangedAt // system detect the latest timestamp and prevent
   delete; // user can cancel/delet the entire travel ( including its child booking and bookingsupp)
   field (numbering : managed , readonly ) TravelUuid;  // non editable field on the fiori screen
 // static behavior field
-  field(readonly) TravelId,OverallStatus;
+ // field(readonly) TravelId,OverallStatus;
+  field ( mandatory : create, readonly : update )TravelId , OverallStatus;
   field (features : instance) BookingFee;
   association _Booking { create; with draft; }    // users can do the bookings to the current travel
 
@@ -60,14 +62,13 @@ etag master LocalLastChangedAt // system detect the latest timestamp and prevent
 
   side effects {
 
-    field BookingFee affects field TotalPrice;
-
    determine action validateCustomerID executed on field CustomerId affects messages;
    determine action validateAgencyID executed on field AgencyId affects messages;
    determine action validateDatesVal executed on field BeginDate, field EndDate affects messages;
+   field BookingFee affects field TotalPrice;
   }
 
-
+// Do mapping between CDS entity Alias names and Database level Fields
   mapping for ZVK_TRAVEL {
   TravelUuid = travel_uuid;
   TravelId = travel_id;
