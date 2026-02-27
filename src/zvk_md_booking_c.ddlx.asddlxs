@@ -31,14 +31,23 @@ annotate entity ZVK_BOOKING_C
     
     @UI.lineItem: [{ position : 35 , importance: #HIGH }]
     @UI.identification: [{ position: 35 , importance: #HIGH }]
+    @Consumption.valueHelpDefinition: [ { entity:{ name: '/DMO/I_Customer_StdVH', element: 'CustomerID' } } ]
+    @EndUserText.label: 'Firstname'
     CustomerId;
     
     @UI.lineItem: [{ position : 45 , importance: #HIGH }]
     @UI.identification: [{ position: 45 , importance: #HIGH }]
+    @Consumption.valueHelpDefinition: [ { entity:{ name: '/DMO/I_Flight_StdVH', element: 'AirlineID' } } ]
     CarrierId;
     
+// Using Additional Binding
+
     @UI.lineItem: [{ position : 55 , importance: #HIGH }]
     @UI.identification: [{ position: 55 , importance: #HIGH }]
+    @Consumption.valueHelpDefinition: [ { entity:{ name: '/DMO/I_Flight_StdVH', element: 'ConnectionID' } , 
+                                          additionalBinding: [ { localElement: 'CarrierId', element: 'AirlineID' , usage : #FILTER_AND_RESULT},
+                                          { localElement : 'FlightDate' , element : 'FlightDate',usage : #RESULT } ,
+                                          { localElement : 'CurrencyCode' , element : 'CurrencyCode',usage : #RESULT }]} ]
     ConnectionId;
     
     @UI.lineItem: [{ position : 65 , importance: #HIGH }]

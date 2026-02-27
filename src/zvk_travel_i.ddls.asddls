@@ -4,6 +4,8 @@
 @VDM.viewType: #BASIC
 define root view entity ZVK_TRAVEL_I as select from zvk_travel
 composition [ 0..* ] of ZVK_BOOKING_I as _Booking
+
+association [0..1] to /DMO/I_Customer as _Customer on $projection.CustomerId = _Customer.CustomerID
 {
     key travel_uuid as TravelUuid,
     travel_id as TravelId,
@@ -28,5 +30,6 @@ composition [ 0..* ] of ZVK_BOOKING_I as _Booking
     local_last_changed_at as LocalLastChangedAt,
     @Semantics.systemDateTime.lastChangedAt: true
     last_changed_at as LastChangedAt,
-    _Booking // Make association public
+    _Booking ,// Make association public
+    _Customer
 }

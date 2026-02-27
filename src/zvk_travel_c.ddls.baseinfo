@@ -3,6 +3,7 @@
 {
 "FROM":
 [
+"/DMO/I_CUSTOMER",
 "ZVK_TRAVEL_I"
 ],
 "ASSOCIATED":

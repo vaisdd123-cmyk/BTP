@@ -7,6 +7,8 @@ define root view entity ZVK_TRAVEL_C as projection on ZVK_TRAVEL_I
     key TravelUuid,
     TravelId,
     AgencyId,
+    @ObjectModel.text.element: [ 'CustomerName' ]
+    @UI.textArrangement: #TEXT_LAST
     CustomerId,
     BeginDate,
     EndDate,
@@ -22,6 +24,7 @@ define root view entity ZVK_TRAVEL_C as projection on ZVK_TRAVEL_I
     LocalLastChangedBy,
     LocalLastChangedAt,
     LastChangedAt,
+    _Customer.FirstName as CustomerName,
     /* Associations */
     _Booking : redirected to composition child ZVK_BOOKING_C
 }
